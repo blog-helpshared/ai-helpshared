@@ -1,17 +1,38 @@
-name: Generate Sitemap
+name: Generate sitemap 
+
 on:
   push:
-    branches:
-      - main
-permissions:
-  contents: write
+    branches: [ main ]
+    paths: [ '**.html' ]
+
 jobs:
-  generate_sitemap:
+  sitemap:
     runs-on: ubuntu-latest
+
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-      - name: Generate the sitemap
-        uses: cicirello/generate-sitemap@v1
-        with:
-          base-url-path: https://blog.helpshared.com
+    - name: Checkout the repo
+      uses: actions/checkout@v7
+      with:
+        fetch-depth: 0 
+    
+    - name: Generate the sitemap
+      id: sitemap
+      uses: blog-helpshared/generate-sitemap@v1
+      with:
+        base-url-path: https://blog.helpshared.com/
+    
+    - name: Output stats
+      run: |
+        echo "sitemap-path = ${{ steps.sitemap.outputs.sitemap-path }}"
+        echo "url-count = ${{ steps.sitemap.outputs.url-count }}"
+        echo "excluded-count = ${{ steps.sitemap.outputs.excluded-count }}"
+    
+    - name: Commit and push
+      run: |
+        if [[ `git status --porcelain sitemap.xml` ]]; then
+          git config --global user.name 'Heri Mulyadi - Helpshared'
+          git config --global user.email 'blog-helpshared@users.noreply.github.com'
+          git add sitemap.xml
+          git commit -m "Automated sitemap update" sitemap.xml
+          git push
+        fi
